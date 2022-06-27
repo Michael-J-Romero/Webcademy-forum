@@ -1,0 +1,68 @@
+{
+    "title": "Post your questions or comments about the lesson here",
+    "content": "discussion for lesson#1.30",
+    "Thread": {
+      "Posts": {
+        "items": [
+          {
+            "id": "5b78adfc-5df8-4877-89a6-6c8c466c9bc4",
+            "content": "how do I fix this bug",
+            "User": {
+              "name": "Michael"
+            },
+            "ReplyThread": {
+              "Thread": {
+                "Posts": {
+                  "items": [
+                      {
+                        "content": "easy just change your var from anObject  to an array",
+                        "User": {
+                          "name": "Trixie"
+                        },
+                        "UpVotes": {
+                          "Users": {
+                            "items": [
+                              {
+                                "user": {
+                                  "name": "Megan"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                          "content": "yeah, that should work.",
+                          "User": {
+                          "name": "Megan"
+                          },
+                          "UpVotes": null
+                      }
+                  ]
+                }
+              }
+            },
+            "UpVotes": null
+          },
+          {
+            "id": "6b22f89d-ca05-4550-aa69-e1d9f3d9d4d3",
+            "content": "first post",
+            "User": {
+              "name": "Michael"
+            },
+            "ReplyThread": null,
+            "UpVotes": null
+          },
+          {
+            "id": "ecb32202-15d0-48e7-a11a-9922437b91d5",
+            "content": "second post",
+            "User": {
+              "name": "Michael"
+            },
+            "ReplyThread": null,
+            "UpVotes": null
+          }
+        ]
+      }
+    }
+  }
