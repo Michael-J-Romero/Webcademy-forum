@@ -80,13 +80,19 @@ export const schema = {
                         "targetName": "postReplyThreadId"
                     }
                 },
+                "type": {
+                    "name": "type",
+                    "isArray": false,
+                    "type": "String",
+                    "isRequired": true,
+                    "attributes": []
+                },
                 "createdAt": {
                     "name": "createdAt",
                     "isArray": false,
-                    "type": "AWSDateTime",
-                    "isRequired": false,
-                    "attributes": [],
-                    "isReadOnly": true
+                    "type": "String",
+                    "isRequired": true,
+                    "attributes": []
                 },
                 "updatedAt": {
                     "name": "updatedAt",
@@ -138,6 +144,17 @@ export const schema = {
                         "name": "byThread",
                         "fields": [
                             "threadID"
+                        ]
+                    }
+                },
+                {
+                    "type": "key",
+                    "properties": {
+                        "name": "postsByDate",
+                        "queryField": "postsByDate",
+                        "fields": [
+                            "type",
+                            "createdAt"
                         ]
                     }
                 },
@@ -816,5 +833,5 @@ export const schema = {
     },
     "enums": {},
     "nonModels": {},
-    "version": "11ee884423c730ae622109cf88bf2060"
+    "version": "1f3184414dc736cf8923745176abe6db"
 };

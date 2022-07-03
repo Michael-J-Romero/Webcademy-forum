@@ -5,7 +5,7 @@ import { ModelInit, MutableModel, PersistentModelConstructor } from "@aws-amplif
 
 
 type PostMetaData = {
-  readOnlyFields: 'createdAt' | 'updatedAt';
+  readOnlyFields: 'updatedAt';
 }
 
 type UserMetaData = {
@@ -48,7 +48,8 @@ export declare class Post {
   readonly UpVotes?: UpVotes | null;
   readonly DownVotes?: DownVotes | null;
   readonly ReplyThread?: ReplyThread | null;
-  readonly createdAt?: string | null;
+  readonly type: string;
+  readonly createdAt: string;
   readonly updatedAt?: string | null;
   readonly postUserId: string;
   readonly postUpVotesId?: string | null;

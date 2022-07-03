@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "api": {
+      "Webcademy": [
+        "Query",
+        "Mutation"
+      ]
+    },
+    "auth": {
+      "webcademy": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ]
+    }
+  },
+  "lambdaLayers": []
+}

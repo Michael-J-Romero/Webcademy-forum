@@ -10,15 +10,11 @@ async function connectToUser(user1) {
     let user =  await getUser(id)
     let userData
     if (user.data.getUser){
-        console.log("found",user)
         const {name,id} = user.data.getUser
         userData = {name,id}
     }
     else{
-        console.log("not found",{name,id},user1)
        user =  await addUser({name,id})
-       
-       console.log(user)
        userData = {name,id}
     }
 }

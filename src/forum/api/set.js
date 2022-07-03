@@ -6,19 +6,22 @@ import {send} from "./utilities"
     "@testing-library/user-event": "^13.5.0",
    
      */
-async function addDiscussion({ title, content,userId }) {
-    const discussionThreadId = await addThread()
+async function addDiscussion({ title, content,userId,threadID,category }) {
+    console.log(threadID,'diaaaaaascussionThreadId')
+    if(!threadID) threadID = await addThread()
+    console.log(category,'discussionThreadId')
     const discussionid = await send(mutations.createDiscussion, {
         content,
         discussionUserId:userId,
         title,
-        discussionThreadId
+        category,
+        threadID
     })
-    return discussionThreadId
+    return threadID
 }
 async function addReply({ content, postid, userId }) {
     //createNew replythread
-    const threadID = await addThread()
+    const threadID = await addThread(9922)
     const replyThread = await send(mutations.createReplyThread, {
         replyThreadThreadId: threadID
     })
@@ -31,8 +34,8 @@ async function addReply({ content, postid, userId }) {
     return threadID
 }
 
-async function addThread() {
-    const result = await send(mutations.createThread, {})
+async function addThread(i) {
+    const result = await send(mutations.createThread,{id:i})//, {id:i}
     return result.data.createThread.id
 }
 async function addUser({name,id}) {
@@ -45,7 +48,7 @@ async function addPost({ postUserId, content, threadID }) {
     const result = await send(mutations.createPost, {
         threadID, content, postUserId
     })
-    return result.data.createPost.id
+    return result.data.createPost
 
 }
 

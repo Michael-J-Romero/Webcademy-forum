@@ -9,34 +9,65 @@ import '@aws-amplify/ui-react/styles.css';
 import { listData } from './graphql/queries';
 import { API, graphqlOperation } from 'aws-amplify';
 import {initiate} from "./forum/api/initializers"
+import {getDiscussion,getDiscussion2} from "./forum/api/get"
  import Forum from "./forum/index"
-const apiName = 'forumApi';
-const path = '/items';
+const apiName = 'api2';
+const path = '/posts';
 
 
 /* create a todo */
 function Cc({user,setData}) {
-console.log(user.username);
+  console.log(user);
   useEffect(() => {
-// initiate()
-    API
-    .get(apiName, path)
-    .then(response => {
-      console.log(response)
-      setData(response)
-      // Add your code here
+    // setTimeout(()  => {
+
+
+          const token = user.signInUserSession.idToken.jwtToken
+          console.log(token);
+      API
+      .get(apiName, path,{
+        headers: {
+          Authorization: token
+        }
+      })
+      .then(response => {
+        console.log(response,'responsee')
+        // setData(response)
+        // Add your code here
+      })
+      .catch(error => {
+        console.log('unauthorized',error);
+      });
+      console.log('ttttyyy2');
+    
+      getDiscussion().then((yy)=>{
+    
+        console.log(yy,'yyy');
+      })
+    // }, 7000);
+// initiate() 
+
+    fetch('https://c5lazy2vhozcqfk6cu5ynzyzye0diexw.lambda-url.us-east-1.on.aws/')
+    .then((e)=>{
+      console.log(e,'eee')
     })
-    .catch(error => {
-      console.log('unauthorized',error);
-    });
 
 
   }, [])
-  return <div></div>
+  return <></>
 }
 function App() {
   useEffect(() => {
   console.log("mounting3")
+ 
+// setTimeout(() => {
+  console.log('ttttyyy');
+
+  getDiscussion2().then((yy)=>{
+
+    console.log(yy,'yyy');
+  })
+// }, 6000);
 },[])
   const theme = {
     name: 'my-theme',
@@ -69,8 +100,10 @@ function Authenticated({signOut, user}) {
   {users}
    <p>
    hello {user.attributes.given_name || user.username}, welcome to the discussion!
+   <button onClick={signOut}>Sign out</button>
    </p>
+
    <Forum user = {user}/>
-   <button onClick={signOut}>Sign out</button></>
+   </>
 }
 export default App;
