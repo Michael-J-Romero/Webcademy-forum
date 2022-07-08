@@ -4,7 +4,7 @@ import {
   defaultDarkModeOverride,
   ThemeProvider, 
 } from '@aws-amplify/ui-react';
-import { Authenticator } from '@aws-amplify/ui-react';
+import { Authenticator,withAuthenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import { listData } from './graphql/queries';
 import { API, graphqlOperation } from 'aws-amplify';
@@ -56,17 +56,9 @@ function Cc({user,setData}) {
   }, [])
   return <></>
 }
-function App() {
+function App({signOut, user}) {
   useEffect(() => {
-  console.log("mounting3")
- 
-// setTimeout(() => {
-  console.log('ttttyyy');
-
-  getDiscussion2().then((yy)=>{
-
-    console.log(yy,'yyy');
-  })
+  console.log("mounting3") 
 // }, 6000);
 },[])
   const theme = {
@@ -76,14 +68,14 @@ function App() {
   return (
     <ThemeProvider style = {{width:"100%",height:"100%"}} theme={theme} colorMode={"dark"}>
       <div className="App">
-        <Authenticator theme={theme} colorMode={"dark"}>
+        {/* <Authenticator theme={theme} colorMode={"dark"}> */}
           {/* <Authenticated /> */}
           
-         {({signOut, user})=> {
-          console.log(user)
-          return <Authenticated {...{signOut, user}}/>
-         }}
-        </Authenticator>
+         {/* {({signOut, user})=> {
+          console.log(user) */}
+          <Authenticated {...{signOut, user}}/>
+         {/* }} */}
+        {/* </Authenticator> */}
       </div>
     </ThemeProvider>
   );
@@ -106,4 +98,4 @@ function Authenticated({signOut, user}) {
    <Forum user = {user}/>
    </>
 }
-export default App;
+export default withAuthenticator(App);

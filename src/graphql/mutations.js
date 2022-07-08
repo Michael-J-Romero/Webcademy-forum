@@ -57,6 +57,8 @@ export const createPost = /* GraphQL */ `
         replyThreadThreadId
         owner
       }
+      replyCount
+      rating
       createdAt
       updatedAt
       postUserId
@@ -123,6 +125,8 @@ export const updatePost = /* GraphQL */ `
         replyThreadThreadId
         owner
       }
+      replyCount
+      rating
       createdAt
       updatedAt
       postUserId
@@ -189,6 +193,8 @@ export const deletePost = /* GraphQL */ `
         replyThreadThreadId
         owner
       }
+      replyCount
+      rating
       createdAt
       updatedAt
       postUserId
@@ -210,6 +216,7 @@ export const createReplyThread = /* GraphQL */ `
         id
         Posts {
           nextToken
+          scannedCount
         }
         createdAt
         updatedAt
@@ -234,6 +241,7 @@ export const updateReplyThread = /* GraphQL */ `
         id
         Posts {
           nextToken
+          scannedCount
         }
         createdAt
         updatedAt
@@ -258,6 +266,7 @@ export const deleteReplyThread = /* GraphQL */ `
         id
         Posts {
           nextToken
+          scannedCount
         }
         createdAt
         updatedAt
@@ -541,6 +550,8 @@ export const createThread = /* GraphQL */ `
           id
           threadID
           content
+          replyCount
+          rating
           createdAt
           updatedAt
           postUserId
@@ -550,6 +561,7 @@ export const createThread = /* GraphQL */ `
           owner
         }
         nextToken
+        scannedCount
       }
       createdAt
       updatedAt
@@ -569,6 +581,8 @@ export const updateThread = /* GraphQL */ `
           id
           threadID
           content
+          replyCount
+          rating
           createdAt
           updatedAt
           postUserId
@@ -578,6 +592,7 @@ export const updateThread = /* GraphQL */ `
           owner
         }
         nextToken
+        scannedCount
       }
       createdAt
       updatedAt
@@ -597,6 +612,8 @@ export const deleteThread = /* GraphQL */ `
           id
           threadID
           content
+          replyCount
+          rating
           createdAt
           updatedAt
           postUserId
@@ -606,6 +623,7 @@ export const deleteThread = /* GraphQL */ `
           owner
         }
         nextToken
+        scannedCount
       }
       createdAt
       updatedAt
@@ -625,6 +643,7 @@ export const createDiscussion = /* GraphQL */ `
         id
         Posts {
           nextToken
+          scannedCount
         }
         createdAt
         updatedAt
@@ -666,6 +685,7 @@ export const updateDiscussion = /* GraphQL */ `
         id
         Posts {
           nextToken
+          scannedCount
         }
         createdAt
         updatedAt
@@ -707,6 +727,7 @@ export const deleteDiscussion = /* GraphQL */ `
         id
         Posts {
           nextToken
+          scannedCount
         }
         createdAt
         updatedAt

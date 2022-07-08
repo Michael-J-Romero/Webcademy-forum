@@ -19,18 +19,52 @@ async function addDiscussion({ title, content,userId,threadID,category }) {
     })
     return threadID
 }
-async function addReply({ content, postid, userId }) {
+async function addReply({ content, threadID, userId,postId }) {
+    
+    //add reply post to replythread
+    const reply =  await addPost({ postUserId: userId, threadID, content })
+  
+        console.log(reply,"here2")
+        // const count = getPostsByThread()
+        send(mutations.updatePost, {
+            id:postId,
+            replyCount:2
+        })
+    return reply
+}
+async function addReply2({ content, postid, userId }) {
     //createNew replythread
-    const threadID = await addThread(9922)
-    const replyThread = await send(mutations.createReplyThread, {
+    const threadID = await addThread()
+    const replyThread = await send(mutations.updatePost, {
         replyThreadThreadId: threadID
     })
+    console.log({id: postid, postReplyThreadId: replyThread.data.createReplyThread.id})
     //add replythread to post
     send(mutations.updatePost, {
         id: postid, postReplyThreadId: replyThread.data.createReplyThread.id
+    }).then((e)=>{
+        console.log(e,"here")
     })
     //add reply post to replythread
     const newpostid = await addPost({ postUserId: userId, threadID, content })
+    .then((e)=>{
+        console.log(e,"here2")
+    })
+    return threadID
+}
+async function addReplyThread(  postid ) {
+    //createNew replythread
+    const threadID = await addThread()
+    const replyThread = await send(mutations.createReplyThread, {
+        replyThreadThreadId: threadID
+    })
+    console.log({id: postid, postReplyThreadId: replyThread.data.createReplyThread.id})
+    //add replythread to post
+    send(mutations.updatePost, {
+        id: postid, postReplyThreadId: replyThread.data.createReplyThread.id
+    }).then((e)=>{
+        console.log(e,"here")
+    })
     return threadID
 }
 
@@ -48,6 +82,9 @@ async function addPost({ postUserId, content, threadID }) {
     const result = await send(mutations.createPost, {
         threadID, content, postUserId
     })
+    //add reply thread
+ console.log(result)
+    addReplyThread(result.data.createPost.id)
     return result.data.createPost
 
 }

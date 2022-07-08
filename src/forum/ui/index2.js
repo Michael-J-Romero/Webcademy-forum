@@ -1,10 +1,15 @@
 // import Discussion from "./mock/discussion.json"
-import { getDiscussion, getDiscussionPosts, getDiscussionsByCategory } from "./api/get"
+import { getDiscussion, getDiscussionPosts, getDiscussionsByCategory } from "../api/get"
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { addDiscussion, addUser, addReply, addPost } from "./api/set"
+import { addDiscussion, addUser, addReply, addPost } from "../api/set"
 import { Button, Input, Icon, TextField } from "@mui/material"
-import { forumStructure } from './api/initializers'
+import { forumStructure } from '../api/initializers'
+import {
+    useQuery,
+    useMutation,
+    useQueryClient,
+} from 'react-query'
 export default Forum
 let theme = {
     w: '750px'
@@ -64,6 +69,7 @@ padding: 8px;
 }
 & .actions{
     display:flex;
+
     align-items:center;
 }
 & .name{
@@ -71,7 +77,6 @@ padding: 8px;
 }
 `}
 `
-
 const StyledSelectD = styled.div`
 margin:auto;
 display:flex;
@@ -88,6 +93,9 @@ max-width: ${theme.w};
     cursor: pointer;
     margin-top: 2px;
     background:#333;
+    &.discussion{
+        background:#444;
+    }
     transition-duration: 300ms;
     &:hover{
         background:#555;
@@ -103,7 +111,6 @@ max-width: ${theme.w};
     } 
 } 
 `
-
 const StyledBar = styled.div`
 margin:auto;
 display:flex;
@@ -120,6 +127,7 @@ max-width: ${theme.w};
     cursor: pointer;
     margin-top: 2px;
     background:#333;
+
     transition-duration: 300ms;
     &:hover{
         background:#555;
@@ -140,6 +148,7 @@ max-width: ${theme.w};
 //     background:#333;
 // } 
 function Forum({ user }) {
+    const query = useQuery('getDiscussion', () => { return getDiscussion("6befdcbe-9e96-4d0b-b203-6fd7b74ecbfb") })
     let [category, setCategory] = useState(forumStructure)
     const [discussion, setDiscussion] = useState()
     function getDiscussionData(i) {
@@ -148,28 +157,51 @@ function Forum({ user }) {
             setDiscussion(discussion)
         })
     }
-    // function refreshPosts() {
-    //     getDiscussionPosts(discussion.threadID).then((p) => {
-    //         let posts = { ...p }
-    //         setDiscussion((discussion) => {
-    //             discussion.Thread.Posts = posts
-    //         })
-    //     })
-    // }
-    function frontendAddPost(post) {
-        setDiscussion((d) => {
-            let discussion = { ...d }
-            discussion.Thread.Posts.items.push(post)
-            return discussion
-        })
+    function frontendAddPost(input) {
+        addPost({ ...input, postUserId: user.attributes.sub, })
+            .then((post) => {
+                setDiscussion((d) => {
+                    let discussion = { ...d }
+                    discussion.Thread.Posts.items.push(post)
+                    return discussion
+                })
+            })
     }
+    function frontendAddReply(post, postIndex) {
+        const threadID = post.ReplyThread?.Thread?.id
+        console.log(threadID, post)
+        addReply({
+            postId: post.id,
+            content: "test testreply to second post",
+            threadID,
+            userId: user.attributes.sub
+        }).then((reply) => {
+            setDiscussion((d) => {
+                let discussion = { ...d }
+                const replyThread = discussion.Thread.Posts.items[postIndex].ReplyThread.Thread
+                if (!replyThread.Posts) { replyThread.Posts = { items: [] } }
+                replyThread.Posts.items.push(reply)
+                console.log(discussion, "discussion", reply, replyThread)
+                return discussion
+            })
+            // updateReplyCount
+            console.log("created reply", reply)
+        })
 
+    }
+    console.log(query.data, "here9")
     return <StyledForum>
+        {query.isLoading ? "loading" : query.data.Thread.Posts.items.map(discussion => {
+            console.log(discussion, "here9")
+            return (
+                <li key={discussion.id}>{discussion.content}</li>
+            )
+        })}
         <Bar {...{ category, setCategory }} />
         {category.children ?
-            <DiscussionSelect {...{getDiscussionData, category, setCategory, discussion, setDiscussion }} />
+            <DiscussionSelect {...{ getDiscussionData, category, setCategory, discussion, setDiscussion }} />
             :
-            <Discussion {...{ getDiscussionData, discussion, user, frontendAddPost }} />
+            <Discussion {...{ getDiscussionData, discussion, user, frontendAddPost, frontendAddReply }} />
 
         }
     </StyledForum>
@@ -201,7 +233,7 @@ function getPath(category) {
     let cc = 0
     while (c.parent && cc < 2) {
         cc++
-        console.log(c);
+
         c = c.parent
         if (c.title == 'root') path.push('forum')
         else path.push(c.title)
@@ -209,39 +241,40 @@ function getPath(category) {
     if (c.parent) path.push('... ')
     return path
 }
-function DiscussionSelect({getDiscussionData, category, setCategory, discussion, setDiscussion }) {
+function DiscussionSelect({ getDiscussionData, category, setCategory, discussion, setDiscussion }) {
     const { children } = category
     const [discussions, setDiscussions] = useState([])
-    console.log(children)
+
 
     useEffect(() => {
         setDiscussion()
-
+        console.log("mount discussion select", category)
     }, [])
     useEffect(() => {
+        console.log("category changed2 ", category)
         setDiscussions([])
         getDiscussionsByCategory(category.id).then((discussions) => {
             const d = discussions.data.DiscussionByCategory.items
-            console.log(discussions, d)
-            setDiscussions((discussions) => d.map((e) => ({ ...e,parent:category,type : "discussion" })))
+
+            setDiscussions((discussions) => d.map((e) => ({ ...e, parent: category, type: "discussion" })))
         })
     }, [category])
-    const content = [...children.filter((e)=>e.type == "category"),...discussions]
+    const content = [...children.filter((e) => e.type == "category"), ...discussions]
     let path = getPath(category)
     return <StyledSelectD>
         {content ?
             content.map((e, i) =>
-                <div className="discussion-button"
-                    onClick={() => { 
-                        console.log(e)
-                        if (e.type == "discussion"){
-                            console.log(e.threadID,"e.threadID")
+                <div className={"discussion-button " + e.type}
+                    onClick={() => {
+
+                        if (e.type == "discussion") {
+
                             getDiscussionData(e.threadID)
                             // setPageType("discussion")
                         }
-                        setCategory(content[i]) 
-                        }}>
-                    {e.title}
+                        setCategory(content[i])
+                    }}>
+                    {e.title} {e.content ? <><br />{e.content}</> : ''}
                 </div>)
             : 'leaf'}
     </StyledSelectD>
@@ -251,12 +284,14 @@ function Collection({ children }) {
         {children}
     </StyledCollection>
 }
-function Discussion({ getDiscussionData, discussion, user,   frontendAddPost }) {
+function Discussion({ getDiscussionData, discussion, user, frontendAddPost, frontendAddReply }) {
     const { title, content, Thread } = discussion || {}
     const [text, setText] = useState("")
     useEffect(() => {
+        console.log("Mount discussion ", discussion)
         // getDiscussionData(discussion.id)
     }, [])
+    console.log("render discussion", discussion)
     return <>{discussion ? <StyledDiscussion>
         <div >
             <span className="title"> {title} </span>
@@ -270,24 +305,18 @@ function Discussion({ getDiscussionData, discussion, user,   frontendAddPost }) 
             maxRows={40}
         />
         <Button onClick={() => {
-            // refreshData()
-
-            addPost({ postUserId: user.attributes.sub, content: text, threadID: discussion.threadID })
-                .then((post) => {
-
-                    // setTimeout(() => {
-                    // refreshData()
-                    // refreshPosts(post)
-                    frontendAddPost(post)
-                    // }, 6000);
-                })
+            frontendAddPost({
+                content: text,
+                threadID: discussion.threadID
+            })
         }}>new comment<Icon>add</Icon></Button>
-        <ThreadUi {...{ Thread }} />
+        <ThreadUi {...{ Thread, discussion, frontendAddReply }} />
     </StyledDiscussion>
         : <div>loading</div>}
     </>
 }
-function ThreadUi({ Thread, isReply }) {
+function ThreadUi({ Thread, isReply, discussion, frontendAddReply }) {
+    console.log(Thread)
     const { items: posts } = Thread.Posts
     // const postst = posts.map((e)=>Date.parse(e.createdAt))
     posts.sort((aa, bb) => {
@@ -299,27 +328,41 @@ function ThreadUi({ Thread, isReply }) {
     // postst.sort((a,b)=>a>b?1:a == b?0:-1)
 
     return <Collection>
-        {posts.map((post, i) => <Post {...{ i, post, isReply, last: i == posts.length - 1 }} />)}
+        {posts.map((post, i) => <Post {...{ frontendAddReply, i, post, isReply, last: i == posts.length - 1 }} />)}
 
     </Collection>
 }
-function Post({ post, last, isReply, i }) {
+function Post({ post, last, isReply, i, frontendAddReply }) {
     let replies
     replies = post.ReplyThread?.Thread
-
+    console.log(replies, "replies", replies?.id)
+    function sendReply() {
+        frontendAddReply(post, i)
+    }
     return <StyledPost key={i} last={last}>
         <div className="name">{post.User.name}  <span className="timestamp">1 month ago</span></div>
         <div className="content">{post.content}</div>
-        {isReply ? "" : <Reply {...{ replies }} />}
+        {<Replies {...{ replies, sendReply }} />}
     </StyledPost>
 }
-function Reply({ replies }) {
+function Replies({ replies, sendReply }) {
+    const [formOpen, setFormOpen] = useState(false)
     const [open, setOpen] = useState(false)
-    const n = replies?.Posts?.items?.length
+    function ReplyForm() {
+        return <div><input /><br />
+            <Button onClick={() => setFormOpen(false)}>cancel</Button>
+            <Button onClick={() => sendReply()}>reply</Button>
+        </div>
+    }
+    const n = replies?.Posts?.scannedCount
     return <div>
         <div className="actions">
-            <Button>reply</Button> <Icon>thumb_up_off_alt</Icon><Icon>thumb_down_off_alt</Icon>
+
+            <Button onClick={() => {
+                setFormOpen((e) => !e)
+            }}>reply</Button> <Icon>thumb_up_off_alt</Icon><Icon>thumb_down_off_alt</Icon>
         </div>
+        {formOpen ? <ReplyForm /> : ""}
         {replies ?
             open ? <div>replies:
                 <ThreadUi {...{ Thread: replies, isReply: true }} />

@@ -11,15 +11,14 @@ const introduction = (title)=>{
     },
     {
         title:`First discussion`,
-        content:`This is the ${title} lesson forum. Feel free to post a discussion 
-        about anything regarding the current lesson.`,
+        content:`This is a test discussion`,
         type:"discussion",
     }
    ]
 }
 const discussion = (threadID)=>({
-    title:`aaa`,
-    content:`vvvv`,
+    title:`how do I nest react component expressions`,
+    content:`what's the correct syntax?`,
     type:"discussion",
     threadID
 })
