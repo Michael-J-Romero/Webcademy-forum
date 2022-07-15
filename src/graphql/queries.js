@@ -44,6 +44,7 @@ export const getPost = /* GraphQL */ `
         id
         Thread {
           id
+          count
           createdAt
           updatedAt
           owner
@@ -186,91 +187,13 @@ export const postsByThreadAndDate = /* GraphQL */ `
     }
   }
 `;
-export const searchPosts = /* GraphQL */ `
-  query SearchPosts(
-    $filter: SearchablePostFilterInput
-    $sort: [SearchablePostSortInput]
-    $limit: Int
-    $nextToken: String
-    $from: Int
-    $aggregates: [SearchablePostAggregationInput]
-  ) {
-    searchPosts(
-      filter: $filter
-      sort: $sort
-      limit: $limit
-      nextToken: $nextToken
-      from: $from
-      aggregates: $aggregates
-    ) {
-      items {
-        id
-        threadID
-        content
-        User {
-          id
-          name
-          createdAt
-          updatedAt
-          owner
-        }
-        UpVotes {
-          id
-          handle
-          createdAt
-          updatedAt
-          owner
-        }
-        DownVotes {
-          id
-          handle
-          createdAt
-          updatedAt
-          owner
-        }
-        ReplyThread {
-          id
-          handle
-          createdAt
-          updatedAt
-          replyThreadThreadId
-          owner
-        }
-        replyCount
-        rating
-        createdAt
-        updatedAt
-        postUserId
-        postUpVotesId
-        postDownVotesId
-        postReplyThreadId
-        owner
-      }
-      nextToken
-      total
-      aggregateItems {
-        name
-        result {
-          ... on SearchableAggregateScalarResult {
-            value
-          }
-          ... on SearchableAggregateBucketResult {
-            buckets {
-              key
-              doc_count
-            }
-          }
-        }
-      }
-    }
-  }
-`;
 export const getReplyThread = /* GraphQL */ `
   query GetReplyThread($id: ID!) {
     getReplyThread(id: $id) {
       id
       Thread {
         id
+        count
         Posts {
           nextToken
           scannedCount
@@ -298,6 +221,7 @@ export const listReplyThreads = /* GraphQL */ `
         id
         Thread {
           id
+          count
           createdAt
           updatedAt
           owner
@@ -355,52 +279,6 @@ export const listDownVotes = /* GraphQL */ `
     }
   }
 `;
-export const searchDownVotes = /* GraphQL */ `
-  query SearchDownVotes(
-    $filter: SearchableDownVotesFilterInput
-    $sort: [SearchableDownVotesSortInput]
-    $limit: Int
-    $nextToken: String
-    $from: Int
-    $aggregates: [SearchableDownVotesAggregationInput]
-  ) {
-    searchDownVotes(
-      filter: $filter
-      sort: $sort
-      limit: $limit
-      nextToken: $nextToken
-      from: $from
-      aggregates: $aggregates
-    ) {
-      items {
-        id
-        handle
-        Users {
-          nextToken
-        }
-        createdAt
-        updatedAt
-        owner
-      }
-      nextToken
-      total
-      aggregateItems {
-        name
-        result {
-          ... on SearchableAggregateScalarResult {
-            value
-          }
-          ... on SearchableAggregateBucketResult {
-            buckets {
-              key
-              doc_count
-            }
-          }
-        }
-      }
-    }
-  }
-`;
 export const getUpVotes = /* GraphQL */ `
   query GetUpVotes($id: ID!) {
     getUpVotes(id: $id) {
@@ -441,52 +319,6 @@ export const listUpVotes = /* GraphQL */ `
         owner
       }
       nextToken
-    }
-  }
-`;
-export const searchUpVotes = /* GraphQL */ `
-  query SearchUpVotes(
-    $filter: SearchableUpVotesFilterInput
-    $sort: [SearchableUpVotesSortInput]
-    $limit: Int
-    $nextToken: String
-    $from: Int
-    $aggregates: [SearchableUpVotesAggregationInput]
-  ) {
-    searchUpVotes(
-      filter: $filter
-      sort: $sort
-      limit: $limit
-      nextToken: $nextToken
-      from: $from
-      aggregates: $aggregates
-    ) {
-      items {
-        id
-        handle
-        Users {
-          nextToken
-        }
-        createdAt
-        updatedAt
-        owner
-      }
-      nextToken
-      total
-      aggregateItems {
-        name
-        result {
-          ... on SearchableAggregateScalarResult {
-            value
-          }
-          ... on SearchableAggregateBucketResult {
-            buckets {
-              key
-              doc_count
-            }
-          }
-        }
-      }
     }
   }
 `;
@@ -551,6 +383,7 @@ export const getThread = /* GraphQL */ `
   query GetThread($id: ID!) {
     getThread(id: $id) {
       id
+      count
       Posts {
         items {
           id
@@ -584,6 +417,7 @@ export const listThreads = /* GraphQL */ `
     listThreads(filter: $filter, limit: $limit, nextToken: $nextToken) {
       items {
         id
+        count
         Posts {
           nextToken
           scannedCount
@@ -603,6 +437,7 @@ export const getDiscussion = /* GraphQL */ `
       threadID
       Thread {
         id
+        count
         Posts {
           nextToken
           scannedCount
@@ -647,6 +482,7 @@ export const listDiscussions = /* GraphQL */ `
         threadID
         Thread {
           id
+          count
           createdAt
           updatedAt
           owner
@@ -691,6 +527,7 @@ export const discussionByThread = /* GraphQL */ `
         threadID
         Thread {
           id
+          count
           createdAt
           updatedAt
           owner
@@ -735,6 +572,7 @@ export const discussionByCategory = /* GraphQL */ `
         threadID
         Thread {
           id
+          count
           createdAt
           updatedAt
           owner
@@ -781,6 +619,7 @@ export const searchDiscussions = /* GraphQL */ `
         threadID
         Thread {
           id
+          count
           createdAt
           updatedAt
           owner

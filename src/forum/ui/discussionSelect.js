@@ -40,7 +40,7 @@ max-width: ${theme.w};
 } 
 `
 
-export default function DiscussionSelect({ getDiscussionData, category, setCategory, discussion, setDiscussion }) {
+export default function DiscussionSelect({   category, setCategory, setDiscussion }) {
     const { children } = category
     console.log(category)
     const { data, isLoading } = useQuery(['getCategories', category.id], async () => {
@@ -59,7 +59,7 @@ export default function DiscussionSelect({ getDiscussionData, category, setCateg
     let discussions = data || []
 
     useEffect(() => {
-        setDiscussion()
+        // setDiscussion()
         console.log("mount discussion select", category)
     }, [])
     const content = [...children.filter((e) => e.type == "category"), ...discussions]
@@ -67,14 +67,15 @@ export default function DiscussionSelect({ getDiscussionData, category, setCateg
     return <StyledSelectD>
         {isLoading?<LinearProgress/>:content ?
             content.map((e, i) =>
-                <div className={"discussion-button " + e.type}
+               <><div  className={"discussion-button " + e.type}
                     onClick={() => {
                         if (e.type == "discussion") {
                         }
+
                         setCategory(content[i])
                     }}>
                     {e.title} {e.content ? <><br />{e.content}</> : ''}
-                </div>)
+                </div></> )
             : 'leaf'}
     </StyledSelectD>
 }

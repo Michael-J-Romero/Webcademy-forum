@@ -47,6 +47,7 @@ export const createPost = /* GraphQL */ `
         id
         Thread {
           id
+          count
           createdAt
           updatedAt
           owner
@@ -115,6 +116,7 @@ export const updatePost = /* GraphQL */ `
         id
         Thread {
           id
+          count
           createdAt
           updatedAt
           owner
@@ -183,6 +185,7 @@ export const deletePost = /* GraphQL */ `
         id
         Thread {
           id
+          count
           createdAt
           updatedAt
           owner
@@ -214,6 +217,7 @@ export const createReplyThread = /* GraphQL */ `
       id
       Thread {
         id
+        count
         Posts {
           nextToken
           scannedCount
@@ -239,6 +243,7 @@ export const updateReplyThread = /* GraphQL */ `
       id
       Thread {
         id
+        count
         Posts {
           nextToken
           scannedCount
@@ -264,6 +269,7 @@ export const deleteReplyThread = /* GraphQL */ `
       id
       Thread {
         id
+        count
         Posts {
           nextToken
           scannedCount
@@ -545,6 +551,7 @@ export const createThread = /* GraphQL */ `
   ) {
     createThread(input: $input, condition: $condition) {
       id
+      count
       Posts {
         items {
           id
@@ -576,6 +583,7 @@ export const updateThread = /* GraphQL */ `
   ) {
     updateThread(input: $input, condition: $condition) {
       id
+      count
       Posts {
         items {
           id
@@ -607,6 +615,7 @@ export const deleteThread = /* GraphQL */ `
   ) {
     deleteThread(input: $input, condition: $condition) {
       id
+      count
       Posts {
         items {
           id
@@ -641,6 +650,7 @@ export const createDiscussion = /* GraphQL */ `
       threadID
       Thread {
         id
+        count
         Posts {
           nextToken
           scannedCount
@@ -683,6 +693,7 @@ export const updateDiscussion = /* GraphQL */ `
       threadID
       Thread {
         id
+        count
         Posts {
           nextToken
           scannedCount
@@ -725,6 +736,7 @@ export const deleteDiscussion = /* GraphQL */ `
       threadID
       Thread {
         id
+        count
         Posts {
           nextToken
           scannedCount

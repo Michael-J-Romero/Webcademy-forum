@@ -64,7 +64,7 @@ export default({children,category, setCategory,setScrolledToBottom,scrolledToBot
     return <StyledForum onScroll={(e) => {
         let {scrollHeight, scrollTop, clientHeight}=e.target
         const l = Math.abs(scrollHeight - (scrollTop + clientHeight))
-            const bottom = l <= 1;
+            const bottom = l <= 500;
             console.log(bottom,{l,scrollHeight,scrollTop , clientHeight})
             if (bottom) { 
                 if (!scrolledToBottom)setScrolledToBottom(true)

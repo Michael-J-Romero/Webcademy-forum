@@ -8,8 +8,12 @@ const getDiscussionInfo = async function (threadId,nextToken) {
     DiscussionByThread(threadID: "${threadId}") {
       items {
         content
+        id
         title
         threadID
+        Thread{
+          count
+        }
         User {
           name
         }
@@ -69,7 +73,7 @@ query MyQuery {
         id
         Thread {
           id
-          Posts(limit: 3) {
+          Posts {
             scannedCount
             items {
               content
@@ -229,7 +233,7 @@ const getDiscussionPosts = async function (threadId,nextToken) {
           id
           Thread {
             id
-            Posts(limit: 3) {
+            Posts {
               scannedCount
               items {
                 content

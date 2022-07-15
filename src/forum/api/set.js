@@ -78,16 +78,38 @@ async function addUser({name,id}) {
     const result = await send(mutations.createUser, input)
     return result.data.createUser.id
 }
-async function addPost({ postUserId, content, threadID }) {
-    const result = await send(mutations.createPost, {
-        threadID, content, postUserId
-    })
-    //add reply thread
- console.log(result)
-    addReplyThread(result.data.createPost.id)
-    return result.data.createPost
+// async function addPost({ postUserId, content, threadID }) {
+//     const result = await send(mutations.createPost, {
+//         threadID, content, postUserId
+//     })
+//     //add reply thread
+//  console.log(result)
+//     addReplyThread(result.data.createPost.id)
+//     return result.data.createPost
 
+// }
+async function addPost({threadID, user, content }) {
+    const postUserId = user.attributes.sub
+    const postId = unique()
+    const newthreadID = unique()
+    const replyThreadID = unique()
+    await send(mutations.createThread, { id: newthreadID })//, {id:i}
+    await send(mutations.createReplyThread, { replyThreadThreadId:newthreadID,id: replyThreadID })
+    const post = {
+        threadID, content, postUserId,
+        id: postId,
+        postReplyThreadId: replyThreadID
+    }
+    const result = await send(mutations.createPost, post)
+    // await mutations.updatePost, {
+    //     id: postId, postReplyThreadId: replyThreadID
+    // }
+    console.log(user)
+    post.User = { name: user.username }
+    console.log(post)
+    return post
 }
-
-
+function unique() {
+    return Date.now() + Math.round(Math.random()*100)
+}
 export {addDiscussion,addUser,addReply,addPost}

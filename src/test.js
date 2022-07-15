@@ -11,39 +11,21 @@ import { API, graphqlOperation } from 'aws-amplify';
 import {initiate} from "./forum/api/initializers"
 import {getDiscussion,getDiscussion2} from "./forum/api/get"
  import Forum from "./forum/index"
-const apiName = 'api2';
 const path = '/posts';
 
+  const theme = {
+    name: 'my-theme',
+    overrides: [defaultDarkModeOverride],
+  };
 
 /* create a todo */
 function Cc({user,setData}) {
   console.log(user);
   useEffect(() => {
-    // setTimeout(()  => {
-
-
-          const token = user.signInUserSession.idToken.jwtToken
-          console.log(token);
-      API
-      .get(apiName, path,{
-        headers: {
-          Authorization: token
-        }
-      })
-      .then(response => {
-        console.log(response,'responsee')
-        // setData(response)
-        // Add your code here
-      })
-      .catch(error => {
-        console.log('unauthorized',error);
-      });
-      console.log('ttttyyy2');
-    
-      getDiscussion().then((yy)=>{
-    
-        console.log(yy,'yyy');
-      })
+      
+      // getDiscussion().then((yy)=>{
+      //   console.log(yy,'yyy');
+      // })
     // }, 7000);
 // initiate() 
 
@@ -61,21 +43,17 @@ function App({signOut, user}) {
   console.log("mounting3") 
 // }, 6000);
 },[])
-  const theme = {
-    name: 'my-theme',
-    overrides: [defaultDarkModeOverride],
-  };
   return (
     <ThemeProvider style = {{width:"100%",height:"100%"}} theme={theme} colorMode={"dark"}>
       <div className="App">
-        {/* <Authenticator theme={theme} colorMode={"dark"}> */}
+        <Authenticator theme={theme} colorMode={"dark"}>
           {/* <Authenticated /> */}
           
-         {/* {({signOut, user})=> {
-          console.log(user) */}
-          <Authenticated {...{signOut, user}}/>
-         {/* }} */}
-        {/* </Authenticator> */}
+         {({signOut, user})=> {
+          // console.log(user)
+          return <Authenticated {...{signOut, user}}/>
+         }}
+        </Authenticator>
       </div>
     </ThemeProvider>
   );
@@ -98,4 +76,5 @@ function Authenticated({signOut, user}) {
    <Forum user = {user}/>
    </>
 }
-export default withAuthenticator(App);
+// export default withAuthenticator(App,null,{theme:theme, colorMode:"dark"});
+export default App
