@@ -4,8 +4,8 @@ import { theme } from "../utilities"
 import { Button, Input, Icon, TextField, LinearProgress, CircularProgress } from "@mui/material"
 import { useQuery, useQueryClient, useMutation, useInfiniteQuery } from 'react-query'
 import { getDiscussion, getDiscussionPosts, getDiscussionInfo } from "../api/get"
-import { addReply, addPost } from "../api/set"
-import { API, graphqlOperation } from 'aws-amplify';
+import { addReply } from "../api/set"
+import addPostMutator from "../api/rest/addPost"
 
 const StyledDiscussion = styled.div`
 & textarea{
@@ -71,37 +71,18 @@ function removePages(queryClient, threadID) {
         }))
     }
 }
-async function sendPost({user,input}) {
-const apiName = 'api2';
-const path = '/posts';
 
-     const token = user.signInUserSession.idToken.jwtToken
-      const response = await API.post(apiName, path,{
-        headers: {
-          Authorization: token
-        },
-        body:input
-      })
-      if(response.error){
-        throw(response.error)
-      }
-        console.log(response,'responsee')
-        return response
-    //   .catch(error => {
-    //     console.log('unauthorized',error);
-    //   });
-}
 export default function Discussion({ scrolledToBottom, threadID, user }) {
     const queryClient = useQueryClient()
     useEffect(() => {
         return removePages(queryClient, threadID)
     }, [])
     const [debounce, setDebounce] = useState(false)
-    const addReplyMutation = useMutation(({ input }) =>  addReply(input) ,
+    const addReplyMutation = useMutation(({ input }) => addReply(input),
         {
             onError: (err, newPost, context) => {
                 console.log(err);
-                alert(err||"couldn't complete request. Please try again")
+                alert(err || "couldn't complete request. Please try again")
             },
             onSuccess: async (reply, input) => {
                 const { postIndex } = input
@@ -110,12 +91,12 @@ export default function Discussion({ scrolledToBottom, threadID, user }) {
                     const replyThread = discussion.pages[0].Thread.Posts.items[postIndex].ReplyThread.Thread
                     if (!replyThread.Posts) { replyThread.Posts = { items: [] } }
                     replyThread.Posts.items.push(reply)
-                    replyThread.Posts.scannedCount ++
+                    replyThread.Posts.scannedCount++
                     return discussion
                 });
             },
-    })
-    function frontendAddReply(content,post, postIndex) {
+        })
+    function frontendAddReply(content, post, postIndex) {
         const threadID = post.ReplyThread?.Thread?.id
         let input = {
             postId: post.id,
@@ -173,88 +154,17 @@ export default function Discussion({ scrolledToBottom, threadID, user }) {
 function AddPostUi({ discussion, user, threadID }) {
     const [text, setText] = useState("")
     const queryClient = useQueryClient()
-    const addPostMutation2 = useMutation((input) => { return addPost(input) },
-        {
-            // onMutate: async (newPost) => {
-            //     await queryClient.cancelQueries('getDiscussion');
-            //     const previousDiscussion = queryClient.getQueryData('getDiscussion');
-            //     queryClient.setQueryData('getDiscussion', [
-            //       ...previousDiscussion,
-            //       { name: newPost },
-            //     ]);
-            //     return { previousDiscussion, newPost };
-            // },
-            onError: (err, newPost, context) => {
-                console.log(err, "error")
-                alert("couldn't complete request. Please try again")
-                //     queryClient.setQueryData('getDiscussion', context.previousDiscussion);
-            },
-            onSuccess: async (newPost) => {
-                console.log(newPost)
-                
-                queryClient.setQueryData(['getDiscussionInfo', threadID], (old) => {
-                    console.log(old)
-                    old.Thread.count++
-                    return old 
-                });
-                queryClient.setQueryData(['getDiscussion', threadID], (old) => {
-                    console.log(old.pages[0])
-                    const oldPosts = old.pages[0].Thread.Posts.items
-                    const updated = { ...old.pages[0] }
-                    updated.Thread = { ...updated.Thread }
-                    updated.Thread.Posts = { ...updated.Thread.Posts }
-                    updated.Thread.Posts.items = [newPost, ...oldPosts]
-                    // queryClient.invalidateQueries('getDiscussion')
-                    return { ...old, pages: [updated, ...old.pages.slice(1)] }
-                });
-            },
+    // const addPostMutation = useMutation()
+    const addPostMutation = useMutation(...addPostMutator(queryClient, threadID))
+    function frontendAddPost() {
+        addPostMutation.mutate({
+            user, input: {
+                userID: user.attributes.sub,
+                discussionId: discussion.id,
+                threadID: discussion.threadID,
+                content: text
+            }
         })
-
-    const addPostMutation = useMutation((input) => { console.log(input);return sendPost(input) },
-        {
-            onError: (err, newPost, context) => {
-                console.log(err, "error",err.error)
-                alert(err||"couldn't complete request. Please try again")
-                //     queryClient.setQueryData('getDiscussion', context.previousDiscussion);
-            },
-            onSuccess: async (data) => {
-                console.log(data)
-                const newPost = {...data,
-                    User:{name:data.username},
-                    replyCount:0,
-                    ReplyThread:{Thread:{
-
-                        id:data.postReplyThreadId,
-                        Posts:{
-                            scannedCount:0,
-                            items:[]
-                        }
-                    }
-                }
-                }
-                console.log({newPost,data})
-                queryClient.setQueryData(['getDiscussionInfo', threadID], (old) => {
-                    console.log(old)
-                    old.Thread.count++
-                    return old 
-                });
-                queryClient.setQueryData(['getDiscussion', threadID], (old) => {
-                    console.log(old.pages[0])
-                    const oldPosts = old.pages[0].Thread.Posts.items
-                    const updated = { ...old.pages[0] }
-                    updated.Thread = { ...updated.Thread }
-                    updated.Thread.Posts = { ...updated.Thread.Posts }
-                    updated.Thread.Posts.items = [newPost, ...oldPosts]
-
-
-                    // queryClient.invalidateQueries('getDiscussion')
-                    return { ...old, pages: [updated, ...old.pages.slice(1)] }
-                });
-            },
-        })
-    function frontendAddPost(input) {
-        console.log(input)
-        addPostMutation.mutate(input)
         // addPostMutation.mutate({ ...input,user, })
     }
     // const addReplyMutation= useMutation((input) => { return addPost(input) },
@@ -316,25 +226,7 @@ function AddPostUi({ discussion, user, threadID }) {
         maxRows={40}
     />
         <Button onClick={() => {
-            console.log(discussion);
-        // sendPost(user,{
-        //     userID:user.attributes.sub,
-        //     discussionId:discussion.id,
-        //     threadID:discussion.threadID,
-        //     content:text
-        // })
-
-
-            // frontendAddPost({
-            //     content: text,
-            //     threadID: discussion.threadID
-            // })
-               frontendAddPost({user,input:{
-                userID:user.attributes.sub,
-                discussionId:discussion.id,
-                threadID:discussion.threadID,
-                content:text
-            }})
+            frontendAddPost()
         }}>new comment<Icon>add</Icon></Button>
         {addPostMutation.isLoading ? <>submitting post...<CircularProgress size={15} /></> : ''}
     </>
@@ -377,9 +269,8 @@ function ThreadUi({ isReply, discussion, frontendAddReply }) {
 function Post({ post, last, isReply, i, frontendAddReply }) {
     let replies
     replies = post.ReplyThread
-    // console.log(replies, "replies" )
     function sendReply(content) {
-        frontendAddReply(content,post, i)
+        frontendAddReply(content, post, i)
     }
     return <StyledPost key={i} last={last}>
         <div className="name">{post.User.name}  <span className="timestamp">1 month ago</span></div>
@@ -391,17 +282,21 @@ function Replies({ replies, sendReply }) {
     const [formOpen, setFormOpen] = useState(false)
     const [open, setOpen] = useState(false)
     const [content, setContent] = useState("")
-    const  replyForm =  <div><input value = {content} onChange = {(e)=>setContent(e.target.value)}/><br />
-            <Button onClick={() => setFormOpen(false)}>cancel</Button>
-            <Button onClick={() => sendReply(content)}>reply</Button>
-        </div>
-    
+    const replyForm = <div><input value={content} onChange={(e) => setContent(e.target.value)} /><br />
+        <Button onClick={() => setFormOpen(false)}>cancel</Button>
+        <Button onClick={() => sendReply(content)}>reply</Button>
+    </div>
+
     const n = replies?.Thread?.Posts?.scannedCount
     return <div>
         <div className="actions">
             <Button onClick={() => {
                 setFormOpen((e) => !e)
-            }}>reply</Button> <Icon>thumb_up_off_alt</Icon><Icon>thumb_down_off_alt</Icon>
+            }}>reply</Button>
+            <Icon>thumb_up_off_alt</Icon>
+            <Icon>thumb_down_off_alt</Icon>
+            <Icon>edit</Icon>
+            <Icon>trash</Icon>
         </div>
         {formOpen ? replyForm : ""}
         {replies?.Thread ?
