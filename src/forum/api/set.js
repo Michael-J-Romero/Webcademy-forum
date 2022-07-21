@@ -19,10 +19,10 @@ async function addDiscussion({ title, content,userId,threadID,category }) {
     })
     return threadID
 }
-async function addReply({ content, threadID, userId,postId }) {
+async function addReply({ content, threadID, user,postId }) {
     
     //add reply post to replythread
-    const reply =  await addPost({ postUserId: userId, threadID, content })
+    const reply =  await addPost({user, threadID, content })
   
         console.log(reply,"here2")
         // const count = getPostsByThread()
@@ -89,7 +89,9 @@ async function addUser({name,id}) {
 
 // }
 async function addPost({threadID, user, content }) {
+    console.log(11);
     const postUserId = user.attributes.sub
+    console.log(112);
     const postId = unique()
     const newthreadID = unique()
     const replyThreadID = unique()

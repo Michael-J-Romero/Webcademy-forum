@@ -1,11 +1,12 @@
 // import Discussion from "./mock/discussion.json"
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import  {getPath,theme} from "../utilities"
+import { Snackbar } from "@mui/material"
+import MuiAlert from '@mui/material/Alert';
 
 const StyledForum = styled.div`
-background: #091a27;
-    padding: 40px;
+background: #1b1b1b;
 
 `
 const StyledBar = styled.div`
@@ -61,11 +62,17 @@ function Bar({ category, setCategory }) {
 }
 
 export default({children,category, setCategory,setScrolledToBottom,scrolledToBottom})=>{
+    let[m,sm]=useState("updating post")
+    useEffect(()=>{
+        setTimeout(() => {
+            sm('test')
+        }, 3000);
+    },[])
     return <StyledForum onScroll={(e) => {
         let {scrollHeight, scrollTop, clientHeight}=e.target
         const l = Math.abs(scrollHeight - (scrollTop + clientHeight))
             const bottom = l <= 500;
-            console.log(bottom,{l,scrollHeight,scrollTop , clientHeight})
+            // console.log(bottom,{l,scrollHeight,scrollTop , clientHeight})
             if (bottom) { 
                 if (!scrolledToBottom)setScrolledToBottom(true)
              }
@@ -77,5 +84,24 @@ export default({children,category, setCategory,setScrolledToBottom,scrolledToBot
 
     <Bar {...{ category, setCategory }} />
     {children}
+    <Snackbar
+        key={m}
+        open={true}
+        // autoHideDuration={6000}
+        // onClose={handleClose}
+        message={m}
+        anchorOrigin={{ vertical:'bottom', horizontal:'center' }} 
+        // action={action}
+      >
+          <Alert
+        //    onClose={handleClose} 
+           severity="success" sx={{ width: '100%' }}>
+          This is a success message!
+        </Alert>
+    </Snackbar>
 </StyledForum>
 }
+
+const Alert = React.forwardRef(function Alert(props, ref) {
+    return <MuiAlert anchorOrigin='BOTTOM-CENTER' elevation={6} ref={ref} variant="filled" {...props} />;
+  });

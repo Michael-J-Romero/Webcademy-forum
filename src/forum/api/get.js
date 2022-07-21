@@ -75,13 +75,7 @@ query MyQuery {
           id
           Posts {
             scannedCount
-            items {
-              content
-              User {
-                name
-                id
-              }
-            }
+            
           }
         }
       }
@@ -95,6 +89,13 @@ query MyQuery {
 }
 
 `
+// items {
+//               content
+//               User {
+//                 name
+//                 id
+//               }
+//             }
   const response = await API.graphql({
     query: q1,
     variables:{},
@@ -217,6 +218,7 @@ const getDiscussionPosts = async function (threadId,nextToken) {
   const q2=`
   query MyQuery {
     postsByThreadAndDate(
+      filter: {not: {content: {eq: "post deleted"}}}
       threadID: "${threadId}",
       ${nextToken?'nextToken:"' + nextToken+'",':""}
       limit: 15, sortDirection: DESC
@@ -233,15 +235,10 @@ const getDiscussionPosts = async function (threadId,nextToken) {
           id
           Thread {
             id
+            count
             Posts {
               scannedCount
-              items {
-                content
-                User {
-                  name
-                  id
-                }
-              }
+            
             }
           }
         }
@@ -255,6 +252,13 @@ const getDiscussionPosts = async function (threadId,nextToken) {
   }
   
   `
+    // items {
+    //             content
+    //             User {
+    //               name
+    //               id
+    //             }
+    //           }
   const response2 = await API.graphql({
     query: q2,
     variables:{},

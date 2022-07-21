@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import { theme } from "../utilities"
-import { Button, Input, Icon, TextField, LinearProgress, CircularProgress } from "@mui/material"
+import { Menu, MenuItem, Avatar, IconButton, Collapse, Button, Input, Icon, TextField, LinearProgress, CircularProgress } from "@mui/material"
 import { useQuery, useQueryClient, useMutation, useInfiniteQuery } from 'react-query'
 import { getDiscussion, getDiscussionPosts, getDiscussionInfo } from "../api/get"
 import { addReply } from "../api/set"
 import addPostMutator from "../api/rest/addPost"
+import deletePostMutator from "../api/rest/deletePost"
+import addReplyMutator from "../api/rest/addReply"
+import editPostMutator from "../api/rest/editPost"
+import { TransitionGroup } from 'react-transition-group';
+import { deepOrange, deepPurple } from '@mui/material/colors';
 
 const StyledDiscussion = styled.div`
 & textarea{
@@ -17,7 +22,7 @@ const StyledDiscussion = styled.div`
 }
 border-radius: 4px;
 padding: 18px;
-background: #111;
+background: #282828;
 max-width: ${theme.w};
 box-shadow: 2px 2px 2px #00000085;
 margin: auto;
@@ -36,31 +41,34 @@ margin: auto;
 & .name{
     font-size: .9em;
     color: #ececece3;
-    margin-bottom: 4px;
-}
+    font-weight: 600;
+ }
 `
 const StyledCollection = styled.div`
 display:flex;
 flex-direction:column;
-    padding: 12px;
-    border: 1px solid #999;
+    border: 1px solid #707070;
+    background: #363636;
     border-radius: 4px;
 
 `
 const StyledPost = styled.div`
-${({ last }) => `
 // background: #ffa50000;
-${last ? "" : "border-bottom: 1px solid #555;"}
+ border-bottom: 1px solid #555; 
 padding: 8px;
 & .content{
+    color:#ffffffc9;
+    padding:0 8px;
+    white-space: pre-wrap;
 }
 & .actions{
     display:flex;
     align-items:center;
 }
 & .name{
+    padding:0 8px;
 }
-`}
+}
 `
 function removePages(queryClient, threadID) {
     return async () => {
@@ -71,61 +79,74 @@ function removePages(queryClient, threadID) {
         }))
     }
 }
-
+function useInfiniteQuery2(threadID,name) {
+    const query = useInfiniteQuery([name, threadID], ({ pageParam }) => 
+    getDiscussionPosts(threadID, pageParam) 
+    ,{
+        enabled:true,
+         refetchInterval: 1000 * 60 * 2,
+         refetchOnWindowFocus: false,
+         getNextPageParam: (lastPage) => {
+             return lastPage.Thread.Posts.nextToken
+         },
+     })
+     return query
+}
 export default function Discussion({ scrolledToBottom, threadID, user }) {
-    const queryClient = useQueryClient()
+    const [debounce, setDebounce] = useState(false)
     useEffect(() => {
         return removePages(queryClient, threadID)
     }, [])
-    const [debounce, setDebounce] = useState(false)
-    const addReplyMutation = useMutation(({ input }) => addReply(input),
-        {
-            onError: (err, newPost, context) => {
-                console.log(err);
-                alert(err || "couldn't complete request. Please try again")
-            },
-            onSuccess: async (reply, input) => {
-                const { postIndex } = input
-                queryClient.setQueryData(['getDiscussion', threadID], (d) => {
-                    let discussion = { ...d }
-                    const replyThread = discussion.pages[0].Thread.Posts.items[postIndex].ReplyThread.Thread
-                    if (!replyThread.Posts) { replyThread.Posts = { items: [] } }
-                    replyThread.Posts.items.push(reply)
-                    replyThread.Posts.scannedCount++
-                    return discussion
-                });
-            },
-        })
-    function frontendAddReply(content, post, postIndex) {
-        const threadID = post.ReplyThread?.Thread?.id
-        let input = {
-            postId: post.id,
-            content,
-            threadID,
-            userId: user.attributes.sub
-        }
-        addReplyMutation.mutate({ input, postIndex })
+    const queryClient = useQueryClient()
+    const editPostMutation = useMutation(...editPostMutator(queryClient))
+    const deletePostMutation = useMutation(...deletePostMutator(queryClient))
+    const addReplyMutation = useMutation(...addReplyMutator(queryClient))
+    // const addReplyMutation = useMutation(({ input }) => addReply(input),
+    //     {
+    //         onError: (err, newPost, context) => {
+    //             console.log(err);
+    //             alert(err || "couldn't complete request. Please try again")
+    //         },
+    //         onSuccess: async (reply, input) => {
+    //             const { postIndex } = input
+    //             queryClient.setQueryData(['getDiscussion', threadID], (d) => {
+    //                 let discussion = { ...d }
+    //                 const replyThread = discussion.pages[0].Thread.Posts.items[postIndex].ReplyThread.Thread
+    //                 if (!replyThread.Posts) { replyThread.Posts = { items: [] } }
+    //                 replyThread.Posts.items.push(reply)
+    //                 replyThread.Posts.scannedCount++
+    //                 return discussion
+    //             });
+    //         },
+    //     })
+    const mutators = {
+        addReplyMutation,
+        deletePostMutation,
+        editPostMutation
     }
+    // const frontendAddReply = useCallback((content, post, postIndex) => {
+    //     const threadID = post.ReplyThread?.Thread?.id
+    //     let input = {
+    //         postId: post.id,
+    //         content,
+    //         threadID,
+    //         user
+    //     }
+    //     addReplyMutation.mutate({ input, postIndex })
+    // }, [user])
 
-    const q1 = useInfiniteQuery(['getDiscussion', threadID], ({ pageParam }) => {
-        return getDiscussionPosts(threadID, pageParam)
-    }, {
-        refetchInterval: 1000 * 60 * 2,
-
-        refetchOnWindowFocus: false,
-        getNextPageParam: (lastPage, pages) => {
-            return lastPage.Thread.Posts.nextToken
-        },
-    })
-    const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = q1
-    if (scrolledToBottom && !isLoading && hasNextPage) {
-        if (!debounce) {
-            fetchNextPage()
-            setDebounce(true)
-        }
-    }
-    else if (debounce) setDebounce(false)
-
+    // const discussionQuery = useInfiniteQuery(['getDiscussion', threadID], ({ pageParam }) => 
+    //    getDiscussionPosts(threadID, pageParam) 
+    //    ,{
+    //         refetchInterval: 1000 * 60 * 2,
+    //         refetchOnWindowFocus: false,
+    //         getNextPageParam: (lastPage) => {
+    //             return lastPage.Thread.Posts.nextToken
+    //         },
+    //     })
+    const discussionQuery =   useInfiniteQuery2(threadID,'getDiscussion')
+    
+    // const { data:discussion, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = q1
     const { data: data2, isLoading: isLoading2 } = useQuery(['getDiscussionInfo', threadID], () => {
         return getDiscussionInfo(threadID)
     }, {
@@ -135,90 +156,46 @@ export default function Discussion({ scrolledToBottom, threadID, user }) {
         refetchInterval: 1000 * 60 * 3
         //  enabled: query1.user?.id,initialData
     })
+    handleInfiniteScroll()
     return <StyledDiscussion  >
-        {isLoading || isLoading2 ? "" : <>
+        {discussionQuery.isLoading || isLoading2 ? "" : <>
             <DiscussionContent {...{ discussion: data2 }} />
             <AddPostUi {...{ discussion: data2, user, threadID }} />
         </>}
-        {isLoading || isLoading2 ? <>loading... <LinearProgress /></> : <>
-            <ThreadUi {...{ Thread: data.Thread, discussion: data, frontendAddReply }} />
+        {discussionQuery.isLoading || isLoading2 ? <>loading... <LinearProgress /></> : <>
+            <ThreadUi {...{ user, mutators, threadID, discussion: discussionQuery.data, }} />
             <div >{
-                isFetchingNextPage ? <>loading... <LinearProgress /></> :
-                    hasNextPage ? 'load more'
-                        : 'no more posts'
+                discussionQuery.isFetchingNextPage ? <>loading... <LinearProgress /></>
+                    : discussionQuery.hasNextPage ? 'load more' : 'no more posts'
             }</div>
         </>}
     </StyledDiscussion>
-
+    function handleInfiniteScroll() {
+        if (scrolledToBottom && !discussionQuery.isLoading && discussionQuery.hasNextPage) {
+            if (!debounce) {
+                discussionQuery.fetchNextPage()
+                setDebounce(true)
+            }
+        }
+        else if (debounce) setDebounce(false)
+    }
 }
 function AddPostUi({ discussion, user, threadID }) {
     const [text, setText] = useState("")
     const queryClient = useQueryClient()
-    // const addPostMutation = useMutation()
-    const addPostMutation = useMutation(...addPostMutator(queryClient, threadID))
+    const addPostMutation = useMutation(...addPostMutator(queryClient))
     function frontendAddPost() {
         addPostMutation.mutate({
             user, input: {
-                userID: user.attributes.sub,
-                discussionId: discussion.id,
-                threadID: discussion.threadID,
-                content: text
+                body: {
+                    threadID: discussion.threadID,
+                    content: text
+                }
             }
         })
-        // addPostMutation.mutate({ ...input,user, })
     }
-    // const addReplyMutation= useMutation((input) => { return addPost(input) },
-    //     {
-    //         onError: (err, newPost, context) => {
-    //             alert("couldn't complete request. Please try again")
-    //         },
-    //         onSuccess: async (reply) => {
-    //             console.log(reply)
-    //             queryClient.setQueryData(['getDiscussion', threadID], (d) => {
-    //                 // setDiscussion((d) => {
-    //                     let discussion = { ...d }
-    //                     const replyThread = discussion.Thread.Posts.items[postIndex].ReplyThread.Thread
-    //                     if (!replyThread.Posts) { replyThread.Posts = { items: [] } }
-    //                     replyThread.Posts.items.push(reply)
-    //                     console.log(discussion, "discussion", reply, replyThread)
-    //                     return discussion
-    //                 // })
-    //             });
-    //         },
-    //     })
-    // function frontendAddReply(post, postIndex) {
-    //     const threadID = post.ReplyThread?.Thread?.id
-    //     console.log(threadID, post)
-    //     let input={
-    //         postId: post.id,
-    //         content: "test testreply to second post",
-    //         threadID,
-    //         userId: user.attributes.sub
-    //     }
-    //     addReplyMutation.mutate({ ...input })
-    // }
-    // function frontendAddReply2(post, postIndex) {
-    //     const threadID = post.ReplyThread?.Thread?.id
-    //     console.log(threadID, post)
-    //     addReply({
-    //         postId: post.id,
-    //         content: "test testreply to second post",
-    //         threadID,
-    //         userId: user.attributes.sub
-    //     }).then((reply) => {
-    //         setDiscussion((d) => {
-    //             let discussion = { ...d }
-    //             const replyThread = discussion.Thread.Posts.items[postIndex].ReplyThread.Thread
-    //             if (!replyThread.Posts) { replyThread.Posts = { items: [] } }
-    //             replyThread.Posts.items.push(reply)
-    //             console.log(discussion, "discussion", reply, replyThread)
-    //             return discussion
-    //         })
-    //         // updateReplyCount
-    //         console.log("created reply", reply)
-    //     })
 
-    // }
+
     return <><textarea value={text} onChange={(e) => setText(e.target.value)}
         placeholder="Type your response here"
         multiline
@@ -247,65 +224,192 @@ function DiscussionContent({ discussion }) {
         <div className="content">{discussionData.content}</div>
     </>
 }
-function ThreadUi({ isReply, discussion, frontendAddReply }) {
-    // const Thread = discussion.pages[0].Thread
+function ThreadUi({ user, mutators, threadID, isReply, discussion }) {
+
     let posts
-    console.log(discussion);
     if (discussion.pages)
-        posts = discussion.pages.reduce((p, c) => {
-            return [...p, ...c.Thread.Posts.items]
+        posts = discussion.pages.reduce((p, c, pageIndex) => {
+            return [...p, ...c.Thread.Posts.items.map((e, postIndex) => ({ ...e, pageIndex, postIndex }))]
         }, [])
     else posts = discussion.Thread.Posts.items
-    // const { items: posts } = Thread.Posts
     posts.sort((aa, bb) => {
         const a = Date.parse(aa.createdAt)
         const b = Date.parse(bb.createdAt)
         return a > b ? -1 : a == b ? 0 : 1
     })
+    //unmountOnExit
+    let posts1 = posts.map((post, i) => <Collapse key={post.id}>
+        <Post {...{ user, mutators, threadID, post, isReply }} />
+    </Collapse>)
     return <StyledCollection>
-        {posts.map((post, i) => <Post {...{ frontendAddReply, i, post, isReply, last: i == posts.length - 1 }} />)}
+        <TransitionGroup
+            timeout={{
+                appear: 600,
+                enter: 600,
+                exit: 1600,
+            }}
+            transitionEnterTimeout={500}
+            transitionLeaveTimeout={500}
+        >
+            {posts1}
+        </TransitionGroup>
     </StyledCollection>
 }
-function Post({ post, last, isReply, i, frontendAddReply }) {
-    let replies
-    replies = post.ReplyThread
-    function sendReply(content) {
-        frontendAddReply(content, post, i)
+class Post extends React.PureComponent {
+    constructor(props) {
+        super(props)
+        const { mutators, threadID, user, post } = this.props
+
+        this.state = {
+            editing: false,
+            newContent: ''
+        }
+        this.setEditing = (v) => {
+            this.setState({ editing: v })
+        }
+        this.setNewContent = (v) => {
+            this.setState({ newContent: v })
+        }
+        this.frontendDeletePost = () => {
+            mutators.deletePostMutation.mutate({
+                user, input: {
+                    body: { postID: post.id, threadID },
+                    postIndex: post.postIndex, pageIndex: post.pageIndex, threadID
+                }
+            })
+        }
+        this.frontendAddReply = (content, post) => {
+            // const threadID = post.ReplyThread?.Thread?.id
+            let input = {
+                postId: post.id,
+                threadID,
+                 postIndex: post.postIndex, postPageIndex: post.pageIndex, parentThreadID:threadID,
+                body: {
+                    content,
+                    threadID: post.ReplyThread?.Thread?.id
+                },
+            }
+            mutators.addReplyMutation.mutate({
+                user, input
+            })
+            return mutators.addReplyMutation
+            // mutators.addReplyMutation.mutate({ input })
+        }
+        this.frontendEditPost = (content) => {
+            mutators.editPostMutation.mutate({
+                user, input: {
+                    body: { postID: post.id, content },
+                    postIndex: post.postIndex, pageIndex: post.pageIndex, threadID,
+                }
+            })
+        }
     }
-    return <StyledPost key={i} last={last}>
-        <div className="name">{post.User.name}  <span className="timestamp">1 month ago</span></div>
-        <div className="content">{post.content}</div>
-        {<Replies {...{ replies, sendReply }} />}
-    </StyledPost>
+    render() {
+        const { frontendDeletePost, frontendAddReply, frontendEditPost } = this
+        const { mutators, user, post,threadID } = this.props
+        const { editing, newContent } = this.state
+        const { isLoading } = mutators.editPostMutation
+        let toggleEditing = function () {
+            if (!editing) this.setNewContent(post.content)
+            this.setEditing(!editing)
+        }
+        let replies = post.ReplyThread
+        return <StyledPost  >
+            <div className="name">
+                <Avatar sx={{
+                    display: 'inline-flex',
+                    marginRight: '8px', bgcolor: deepOrange[500]
+                }}>M</Avatar>
+                {post.User.name}  <span className="timestamp">1 month ago</span></div>
+            {!editing ? <div className="content">{post.content}</div>
+                : <>
+                    <textarea className="content" onChange={function (e) { this.setNewContent(e.target.value) }} value={newContent} />
+                    <button onClick={function () {
+                        frontendEditPost(newContent)
+                        //  mutators.editPostMutation
+                        this.setEditing(false)
+                    }}>save</button></>}
+            {isLoading ? 'loading' : ''}
+            {<Actions {...{ threadID, post, toggleEditing, newContent, user, mutators, frontendDeletePost, replies, frontendAddReply }} />}
+        </StyledPost>
+    }
 }
-function Replies({ replies, sendReply }) {
+function Actions({ threadID, post, toggleEditing, newContent, user, mutators, frontendDeletePost, replies, frontendAddReply }) {
     const [formOpen, setFormOpen] = useState(false)
     const [open, setOpen] = useState(false)
     const [content, setContent] = useState("")
+    const [anchorEl, setAnchorEl] = React.useState(null);
+    const menuOpen = Boolean(anchorEl);
+    function sendReply(content) {
+        frontendAddReply(content, post)
+    }
+    const handleClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
     const replyForm = <div><input value={content} onChange={(e) => setContent(e.target.value)} /><br />
         <Button onClick={() => setFormOpen(false)}>cancel</Button>
-        <Button onClick={() => sendReply(content)}>reply</Button>
+        <Button onClick={() => {setFormOpen(false);sendReply(content)}}>reply</Button>
     </div>
 
-    const n = replies?.Thread?.Posts?.scannedCount
+    const n = replies?.Thread?.count
     return <div>
+        <Menu
+            id="basic-menu"
+            anchorEl={anchorEl}
+            open={menuOpen}
+            onClose={handleClose}
+            MenuListProps={{
+                'aria-labelledby': 'basic-button',
+            }}
+        >
+            <MenuItem onClick={() => { toggleEditing(); handleClose() }}>Edit</MenuItem>
+            <MenuItem onClick={() => { frontendDeletePost(); handleClose() }}>Delete</MenuItem>
+            <MenuItem onClick={handleClose}>Report</MenuItem>
+        </Menu>
         <div className="actions">
-            <Button onClick={() => {
-                setFormOpen((e) => !e)
-            }}>reply</Button>
-            <Icon>thumb_up_off_alt</Icon>
-            <Icon>thumb_down_off_alt</Icon>
-            <Icon>edit</Icon>
-            <Icon>trash</Icon>
+            <ActionButton>thumb_up_off_alt</ActionButton> 125
+            <ActionButton>thumb_down_off_alt</ActionButton>
+            <ActionButton text onClick={() => { setFormOpen((e) => !e) }}>reply</ActionButton>
+            <ActionButton onClick={handleClick}>more_horiz</ActionButton>
+            {/* <ActionButton  onClick = {()=>{toggleEditing()}}> edit </ActionButton>
+           <ActionButton onClick = {frontendDeletePost}>delete_outlined</ActionButton> */}
         </div>
         {formOpen ? replyForm : ""}
-        {replies?.Thread ?
-            open ? <div>replies:
-                <ThreadUi {...{ Thread: replies, discussion: replies, isReply: true }} />
-                <Button onClick={() => setOpen(false)}>hide {n} replies</Button>
-            </div>
-                : <Button onClick={() => setOpen(true)}>show {n} replies</Button>
-            : ""
+        {n>0 ?open?<Replies {...{ threadID, user, mutators, threadID, replies, setOpen, open, n }} /> 
+        :<Button onClick={() => setOpen((e)=>!e)}>{open?"hide":"show"} {n} replies</Button>
+    
+         : ""
         }
     </div>
+}
+function Replies({ user, mutators, threadID, replies, setOpen, open, n }) {
+    console.log(replies)
+    const replyQuery =   useInfiniteQuery2(replies.Thread.id,'getReply')
+    console.log(replyQuery)
+   
+    return <>
+     <Button onClick={() => setOpen((e)=>!e)}>{
+     open?replyQuery.isLoading?"loading":"hide":"show"} {n} replies</Button>
+    {(replyQuery.isSuccess  == true && replyQuery.data!=null)?<div>replies:
+        <ThreadUi {...{ user, mutators, threadID, discussion: replyQuery.data, isReply: true }} />
+        {/* <Button onClick={() => setOpen(false)}>hide {n} replies</Button> */}
+    </div>:""}
+    </>
+   
+    
+}
+function ActionButton({ children, ...props }) {
+    return <IconButton
+        {...props}
+        size='small'
+        style={{ color: '#999' }}
+        color='secondary'
+    >
+        {props.text ? children : <Icon style={{ fontSize: '22px', marginRight: '8px' }}>{children}</Icon>}
+    </IconButton>
+
 }
